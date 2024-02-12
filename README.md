@@ -1,6 +1,6 @@
 # 魔力赏市集搜索脚本
 
-使用前请填写你自己的cookie
+使用前请填写你自己的cookie，具体api分析见这篇[博客](https://qianxu.run/magic-market-search/)
 
 ```python
 HEADERS = {
