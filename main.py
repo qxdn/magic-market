@@ -1,35 +1,16 @@
 import requests
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import time
-import click
 import logging
-import sys
+import logging.config
+from noneprompt import InputPrompt, ListPrompt, Choice, CheckboxPrompt
 
 # 配置logging模块
-logging.basicConfig(filename="dev.txt", level=logging.DEBUG)
-fmt = logging.Formatter(
-    "%(name)s: %(asctime)s | %(levelname)s | %(filename)s:%(lineno)s | %(process)d >>> %(message)s"
-)
-# handler
-result_handler = logging.FileHandler("result.txt")
-result_handler.setLevel(logging.INFO)
-log_handler = logging.FileHandler("log.txt")
-log_handler.setLevel(logging.INFO)
-debug_handler = logging.FileHandler("debug.txt")
-debug_handler.setLevel(logging.DEBUG)
-debug_handler.setFormatter(fmt)
-std_handler = logging.StreamHandler(sys.stdout)
-std_handler.setLevel(logging.INFO)
+CONFIG = "./log_conf.ini"
+logging.config.fileConfig(CONFIG)
 
-# logger
 common_logger = logging.getLogger("common")
-common_logger.addHandler(log_handler)
-common_logger.addHandler(debug_handler)
-common_logger.addHandler(std_handler)
 result_logger = logging.getLogger("result")
-result_logger.addHandler(result_handler)
-
-
 
 
 MARKET_URL = "https://mall.bilibili.com/mall-magic-c/internet/c2c/v2/list"
@@ -38,29 +19,6 @@ HEADERS = {
     "Cookie": "",  #  TODO: 填写cookie
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 }
-
-CATEGORY_MAP = {
-    "全部": "",
-    "手办": "2312",
-    "模型": "2066",
-    "周边": "2331",
-    "3C": "2273",
-    "福袋": "fudai_cate_id",
-}
-
-SORT_MAP = {
-    "时间降序": "TIME_DESC",
-    "价格升序": "PRICE_ASC",
-    "价格降序": "PRICE_DESC",
-}
-
-
-def category2id(category: str):
-    return CATEGORY_MAP.get(category, "")
-
-
-def sort2type(sort: str):
-    return SORT_MAP.get(sort, "TIME_DESC")
 
 
 def process_url(c2citemsId):
@@ -124,7 +82,13 @@ def filter_data(data: dict, keyword: str = None):
     return result
 
 
-def search(keyword: str, category: str, sort: str):
+def search(
+    keyword: str,
+    category: str,
+    sort: str,
+    price: List[str] = [],
+    discount: List[str] = [],
+):
     nextId = None
     count = 0
     result = []
@@ -132,8 +96,8 @@ def search(keyword: str, category: str, sort: str):
         data = get_market_data(
             next_id=nextId,
             category_filter=category,
-            discount_filter=[],
-            price_filter=[],
+            discount_filter=discount,
+            price_filter=price,
             sort_type=sort,
         )
 
@@ -154,23 +118,58 @@ def search(keyword: str, category: str, sort: str):
     common_logger.info(f"共找到{len(result)}个结果")
     common_logger.info(result)
 
-
-@click.command()
-@click.option("--keyword", prompt="搜索关键词", help="搜索关键词")
-@click.option(
-    "--category",
-    prompt="请选择分类",
-    type=click.Choice(["全部", "手办", "模型", "周边", "3C", "福袋"]),
-    default="全部",
-)
-@click.option(
-    "--sort",
-    prompt="请选择排序方式",
-    type=click.Choice(["时间降序", "价格升序", "价格降序"]),
-    default="时间降序",
-)
-def cli(keyword: str, category: str, sort: str):
-    search(keyword, category2id(category), sort2type(sort))
+# 交互命令行
+def cli():
+    # 关键词
+    keyword: str = InputPrompt("搜索关键词", validator=lambda string: True).prompt()
+    # 分类
+    category: Tuple[Choice] = ListPrompt(
+        "请选择分类",
+        choices=[
+            Choice(name="全部", data=""),
+            Choice(name="手办", data="2312"),
+            Choice(name="模型", data="2066"),
+            Choice(name="周边", data="2331"),
+            Choice(name="3C", data="2273"),
+            Choice(name="福袋", data="fudai_cate_id"),
+        ],
+    ).prompt()
+    category: str = category.data
+    # 排序
+    sort: Choice = ListPrompt(
+        "请选择排序方式",
+        choices=[
+            Choice(name="时间降序", data="TIME_DESC"),
+            Choice(name="价格升序", data="PRICE_ASC"),
+            Choice(name="价格降序", data="PRICE_DESC"),
+        ],
+    ).prompt()
+    sort: str = sort.data
+    # 价格
+    price: Tuple[Choice] = CheckboxPrompt(
+        "请输入价格区间,默认全部",
+        choices=[
+            Choice(name="20以下", data="0-2000"),
+            Choice(name="20-30", data="2000-3000"),
+            Choice(name="30-50", data="3000-5000"),
+            Choice(name="50-100", data="5000-10000"),
+            Choice(name="100-200", data="10000-20000"),
+            Choice(name="200以上", data="20000-0"),
+        ],
+    ).prompt()
+    price: List[str] = [i.data for i in price]
+    # 折扣
+    discount: Tuple[Choice] = CheckboxPrompt(
+        "请选择价格区间，默认全部",
+        choices=[
+            Choice(name="3折以下", data="0-30"),
+            Choice(name="3-5折", data="30-50"),
+            Choice(name="5-7折", data="50-70"),
+            Choice(name="7折以上", data="70-100"),
+        ],
+    ).prompt()
+    discount: List[str] = [i.data for i in discount]
+    search(keyword, category, sort, discount)
 
 
 cli()
