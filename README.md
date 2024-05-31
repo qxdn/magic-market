@@ -28,6 +28,9 @@ python main.py
 
 结果会在`result.txt`里面
 
+# 运行效果
+![image](./assets/run.png)
+
 # TODO
 - [ * ] 更好的prompt方式
 - [ * ] 多种检索方法
