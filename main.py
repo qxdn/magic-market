@@ -56,8 +56,8 @@ def get_market_data(
             "categoryFilter": category_filter,
             "nextId": next_id,
             "sortType": sort_type,
-            "priceFilter": price_filter,
-            "discountFilter": discount_filter,
+            "priceFilters": price_filter,
+            "discountFilters": discount_filter,
         },
     )
     # print(response.content)
