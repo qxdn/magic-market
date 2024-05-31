@@ -2,21 +2,36 @@ import requests
 from typing import List, Dict, Tuple
 import time
 import logging
+import json
+import os
 import logging.config
 from noneprompt import InputPrompt, ListPrompt, Choice, CheckboxPrompt
 
 # 配置logging模块
-CONFIG = "./log_conf.ini"
-logging.config.fileConfig(CONFIG)
+LOG_CONFIG = "./log_conf.ini"
+logging.config.fileConfig(LOG_CONFIG)
 
 common_logger = logging.getLogger("common")
 result_logger = logging.getLogger("result")
 
+# 读取配置
+DEFAULT_COOKIE = "请填写cookie"
+CONFIG_JSON = "./config.json"
+if not os.path.exists(CONFIG_JSON):
+    with open(CONFIG_JSON, "w", encoding="utf-8") as f:
+        json.dump({"cookie": DEFAULT_COOKIE}, f, ensure_ascii=False)
 
 MARKET_URL = "https://mall.bilibili.com/mall-magic-c/internet/c2c/v2/list"
 
+with open(CONFIG_JSON, "r", encoding="utf-8") as f:
+    CONFIG = json.load(f)
+    cookie = CONFIG.get("cookie", "")
+    if not cookie or cookie == DEFAULT_COOKIE:
+        common_logger.error("请填写cookie")
+        exit(1)
+
 HEADERS = {
-    "Cookie": "",  #  TODO: 填写cookie
+    "Cookie": cookie,
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 }
 
@@ -46,6 +61,9 @@ def get_market_data(
     )
     # print(response.content)
     common_logger.debug(f"response content:{response.content}")
+    if response.status_code != 200:
+        common_logger.error(f"请求失败，可能被风控，状态码：{response.status_code}")
+        exit(1)
     return response.json()
 
 
@@ -63,7 +81,9 @@ def filter_data(data: dict, keyword: str = None):
             )
             result.append(
                 {
-                    f"{c2cItemsName} - {showPrice}元 - {process_url(c2cItemsId)}": showPrice
+                    "name": c2cItemsName,
+                    "price": showPrice,
+                    "url": process_url(c2cItemsId),
                 }
             )
             continue
@@ -75,7 +95,9 @@ def filter_data(data: dict, keyword: str = None):
                 )
                 result.append(
                     {
-                        f"{c2cItemsName} - {showPrice}元 - {process_url(c2cItemsId)}": showPrice
+                        "name": c2cItemsName,
+                        "price": showPrice,
+                        "url": process_url(c2cItemsId),
                     }
                 )
                 break
@@ -117,6 +139,7 @@ def search(
 
     common_logger.info(f"共找到{len(result)}个结果")
     common_logger.info(result)
+
 
 # 交互命令行
 def cli():

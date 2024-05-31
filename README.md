@@ -9,13 +9,26 @@ HEADERS = {
 }
 ```
 
+# 安装
+```shell
+git clone git@github.com:qxdn/magic-market.git
+cd magic-market
+python -m pip install -r requestments.txt 
+```
+
 # 使用方法
 
 ```shell
-python3 main.py
+python main.py
+```
+初次运行会生成`config.json`，里面填上你的cookie，再次运行
+```json
+{"cookie": "请填写cookie"}
 ```
 
+结果会在`result.txt`里面
+
 # TODO
-- [ ] 更好的prompt方式
-- [ ] 多种检索方法
+- [ * ] 更好的prompt方式
+- [ * ] 多种检索方法
 - [ ] 更好的412提示方式

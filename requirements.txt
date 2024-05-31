@@ -1,0 +1,2 @@
+noneprompt==0.1.9
+Requests==2.32.3
