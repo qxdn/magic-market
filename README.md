@@ -32,6 +32,6 @@ python main.py
 ![image](./assets/run.png)
 
 # TODO
-- [ * ] 更好的prompt方式
-- [ * ] 多种检索方法
+- [*] 更好的prompt方式
+- [*] 多种检索方法
 - [ ] 更好的412提示方式

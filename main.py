@@ -5,6 +5,7 @@ import logging
 import json
 import os
 import logging.config
+import random
 from noneprompt import InputPrompt, ListPrompt, Choice, CheckboxPrompt
 
 # 配置logging模块
@@ -133,9 +134,10 @@ def search(
             result_logger.info(search_result)
         result.extend(search_result)
         count += 1
-        if count % 30 == 0:
-            common_logger.info("避免风控，休息半分钟")
-            time.sleep(30)
+        if count % 20 == 0:
+            times = random.randrange(30, 60, 1)
+            common_logger.info(f"避免风控，休息{times}秒")
+            time.sleep(times)
 
     common_logger.info(f"共找到{len(result)}个结果")
     common_logger.info(result)
@@ -192,7 +194,7 @@ def cli():
         ],
     ).prompt()
     discount: List[str] = [i.data for i in discount]
-    search(keyword, category, sort, discount)
+    search(keyword, category, sort, price, discount)
 
 
 cli()
