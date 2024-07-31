@@ -14,6 +14,7 @@ logging.config.fileConfig(LOG_CONFIG)
 
 common_logger = logging.getLogger("common")
 result_logger = logging.getLogger("result")
+search_logger = logging.getLogger("search")
 
 # 读取配置
 DEFAULT_COOKIE = "请填写cookie"
@@ -65,8 +66,9 @@ def get_market_data(
     if response.status_code != 200:
         common_logger.error(f"请求失败，可能被风控，状态码：{response.status_code}")
         exit(1)
-    return response.json()
-
+    json_data = response.json()
+    search_logger.info(json_data)
+    return json_data
 
 def filter_data(data: dict, keyword: str = None):
     result = []
